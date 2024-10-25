@@ -36,8 +36,8 @@ void taskADC(void *pvParameters)
 
       //Conditionals for sending throttle values
       if(filteredThrottle>=lowThres && filteredThrottle<=upThres){
-        Serial.print("AIN3: "); Serial.print(adc3); Serial.print("  "); Serial.print(volts3); Serial.println("V");
-        Serial.print("Filtered AIN3: "); Serial.print(filteredThrottle); Serial.println("V");
+        // Serial.print("AIN3: "); Serial.print(adc3); Serial.print("  "); Serial.print(volts3); Serial.println("V");
+        // Serial.print("Filtered AIN3: "); Serial.print(filteredThrottle); Serial.println("V");
         
         // Send only raw data with comment via UART
         SERIAL_PORT.print(filteredThrottle);
