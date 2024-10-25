@@ -1,10 +1,16 @@
 #include <main.h>
 
-Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
-//Adafruit_ADS1015 ads;     /* Use this for the 12-bit version */
-int16_t adc0, adc1, adc2, adc3, results;
-float volts0, volts1, volts2, volts3, current;
+Adafruit_ADS1115 ads;         /* Use this for the 16-bit version */
+//Adafruit_ADS1015 ads;       /* Use this for the 12-bit version */
+int16_t adc3;                 //Raw data from ADC
+float volts3;                 //Voltage values from ADC
 
+const double lowThres=0.8, upThres=4.5; //Lower and upper threshold for the Throttle
+
+int numRead=10;               //Number of readings for averaging
+float avgVal[10];             //Array of raw readings
+float sum=0.0;            
+float filteredThrottle=0.0;   //Filtered Throttle signal
 
 
 void taskADC(void *pvParameters)
@@ -16,52 +22,34 @@ void taskADC(void *pvParameters)
 
   while(true)
     {
-      adc0 = ads.readADC_SingleEnded(0);
-      adc1 = ads.readADC_SingleEnded(1);
-      adc2 = ads.readADC_SingleEnded(2);
+      //ADS1115 reading
       adc3 = ads.readADC_SingleEnded(3);
+      volts3 = ads.computeVolts(adc3);
 
-      volts0 = ads.computeVolts(adc0);
-      volts1 = ads.computeVolts(adc1);
-      volts2 = ads.computeVolts(adc2);
-      volts3 =  ads.computeVolts(adc3);
-      results = ads.readADC_Differential_2_3();
-      
-      // // Print data to the serial monitor
-      // Serial.println("-----------------------------------------------------------");
-      
-      //Serial.print("AIN0: "); Serial.print(adc0); Serial.print("  "); Serial.print(volts0); Serial.println("V");
-      // Serial.print("AIN1: "); Serial.print(adc1); Serial.print("  "); Serial.print(volts1); Serial.println("V");
-      // Serial.print("AIN2: "); Serial.print(adc2); Serial.print("  "); Serial.print(volts2); Serial.println("V");
-      // Serial.print("AIN3: "); Serial.print(adc3); Serial.print("  "); Serial.print(volts3); Serial.println("V");
-     // Serial.print("Differential: "); Serial.print(results); Serial.print("("); Serial.print(ads.computeVolts(results)); Serial.println("mV)");
+      //Averaging 10 readings to filter out noise
+      sum=0;
+      for(int i=0; i<numRead; i++){
+        avgVal[i]=volts3;
+        sum+=avgVal[i];
+      }
+      filteredThrottle=sum/numRead;
 
+      //Conditionals for sending throttle values
+      if(filteredThrottle>=lowThres && filteredThrottle<=upThres){
+        Serial.print("AIN3: "); Serial.print(adc3); Serial.print("  "); Serial.print(volts3); Serial.println("V");
+        Serial.print("Filtered AIN3: "); Serial.print(filteredThrottle); Serial.println("V");
+        
+        // Send only raw data with comment via UART
+        SERIAL_PORT.print(filteredThrottle);
+      } 
+      else{
+        // Serial.println("Throttle Disconnected")
 
-
-      // Send data with comment via UART
-      // Serial1.print("AIN0: "); Serial1.print(adc3); Serial.print("  "); Serial1.print(volts0); Serial1.println("V");
-      // Serial1.print("AIN1: "); Serial1.print(adc1); Serial.print("  "); Serial1.print(volts1); Serial1.println("V");
-      // Serial1.print("AIN2: "); Serial1.print(adc2); Serial.print("  "); Serial1.print(volts2); Serial1.println("V");
-      // Serial1.print("AIN3: "); Serial1.print(adc3); Serial.print("  "); Serial1.print(volts3); Serial1.println("V");
-      // Serial1.print("Differential: "); Serial1.print(results); Serial1.print("("); Serial1.print(ads.computeVolts(results)); Serial1.println("mV)");
-      
-      // // Send only raw data with comment via UART
-      // Serial1.print(adc0); Serial.print("  "); Serial1.println(volts0);
-      // Serial1.print(adc1); Serial.print("  "); Serial1.println(volts1);
-      // Serial1.print(adc2); Serial.print("  "); Serial1.println(volts2);
-      //Serial1.print(adc3); Serial.print(" Volt: "); Serial1.println(volts3);
-      
-
-      /* Please send only Data that is needed  */
-      // Serial1.print(results);  Serial.print("  "); Serial1.print(ads.computeVolts(results));
-       //Serial1.println(volts0);
-      // Serial1.println(volts1);
-      Serial1.println(volts3);
-      //current = (volts3);
+        // Send only raw data with comment via UART
+        SERIAL_PORT.print("Throttle Disconnected");
+      }
 
       vTaskDelay(10/portTICK_PERIOD_MS);
-
-
     }
 }
 
@@ -70,12 +58,14 @@ void taskADC(void *pvParameters)
 void setup(void)
 {
   Serial.begin(115200);
-  Serial.println("Hello!");
-  // Start UART communication with the specified baud rate
-  Serial1.begin(115200, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
 
- // Serial.println("Getting single-ended readings from AIN0..3");
- // Serial.println("ADC Range: +/- 6.144V (1 bit = 3mV/ADS1015, 0.1875mV/ADS1115)");
+  // Start UART communication with the specified baud rate
+  SERIAL_PORT.begin(115200, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
+
+  //Empty array to storage unfiltered values
+  for (int i = 0; i < numRead; i++) {
+    avgVal[i] = 0;
+  }
 
   xTaskCreate(taskADC, "taskADC", 5000, NULL, 1, NULL);  // Read the ADC values
 }

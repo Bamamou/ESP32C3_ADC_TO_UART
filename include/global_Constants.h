@@ -9,6 +9,8 @@
 
 #define UART_RX_PIN 20     // GPIO for UART RX 
 #define UART_TX_PIN 21    // GPIO for UART TX 
+#define SERIAL_PORT Serial1
+#define BAUD_RATE 115200
 
 
 /* #endregion */
