@@ -16,7 +16,7 @@ float filteredThrottle=0.0;   //Filtered Throttle signal
 void taskADC(void *pvParameters)
 {
   if (!ads.begin()) {
-    Serial.println("Failed to initialize ADS.");
+    // Serial.println("Failed to initialize ADS.");
     while (1);
   }
 
@@ -43,7 +43,7 @@ void taskADC(void *pvParameters)
         SERIAL_PORT.print(filteredThrottle);
       } 
       else{
-        // Serial.println("Throttle Disconnected")
+        // Serial.println("Throttle Disconnected");
 
         // Send only raw data with comment via UART
         SERIAL_PORT.print("Throttle Disconnected");
@@ -57,7 +57,7 @@ void taskADC(void *pvParameters)
 
 void setup(void)
 {
-  Serial.begin(115200);
+  // Serial.begin(115200);
 
   // Start UART communication with the specified baud rate
   SERIAL_PORT.begin(115200, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
