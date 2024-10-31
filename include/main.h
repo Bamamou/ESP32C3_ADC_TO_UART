@@ -6,13 +6,13 @@
 #define __MAIN_H__
 
 #include <Arduino.h>
-#include <Adafruit_ADS1X15.h>
 #include <SPI.h>
     
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "global_Constants.h"
+#include "task_ADC.h"
 
-void taskADC(void *pvParameters);
+// void taskADC(void *pvParameters);
 
 #endif
