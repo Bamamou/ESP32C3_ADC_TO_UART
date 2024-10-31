@@ -11,7 +11,7 @@ int numRead=10;               //Number of readings for averaging
 float avgVal[10];             //Array of raw readings
 float sum=0.0;            
 float filteredThrottle=0.0;   //Filtered Throttle signal
-const int scaleFactor=100;              //Scale factor to send 2 decimal points
+const int scaleFactor=100;    //Scale factor to send 2 decimal points
 
 const uint8_t HEADER = 0xAA;  // Header byte
 const uint8_t FOOTER = 0xBB;  // Footer byte
@@ -30,7 +30,7 @@ void taskADC(void *pvParameters)
   }
 
   if (!ads.begin()) {
-    Serial.println("Failed to initialize ADS.");
+    // Serial.println("Failed to initialize ADS.");
     while (1);
   }
 
@@ -52,6 +52,7 @@ void taskADC(void *pvParameters)
         // Serial.println("Throttle Disconnected");
 
         // Send only raw data with comment via UART
+        // sendData(0);
         SERIAL_PORT.print("Throttle Disconnected");
       }
 
@@ -80,21 +81,18 @@ void sendData(float value) {
 
   // Split the encoded value into two bytes
   uint8_t bytes[2];
-  bytes[0] = (encodedValue >> 8) & 0xFF; // Most significant byte (MSB)
+  bytes[0] = encodedValue >> 8; // Most significant byte (MSB)
   bytes[1] = encodedValue & 0xFF;        // Least significant byte (LSB)
 
-  // Compute the checksum
-  uint8_t checksum = computeChecksum(bytes, 2);
+  uint8_t packet[5] = {HEADER, bytes[0], bytes[1], computeChecksum(packet + 1, 3), FOOTER };
 
-  // Construct the packet
-  uint8_t packet[] = {HEADER, bytes[0], bytes[1], checksum, FOOTER};
-
-  // Send the bytes
-  SERIAL_PORT.write(packet, sizeof(packet));
-  // for(int i=0; i<5; i++){
-  //     Serial.print(packet[i],HEX);
-  //   }
-  //   Serial.println(" ");
+  // Send the packet using a for loop
+  Serial.print("Sending packet: ");
+  for (int i = 0; i < 5; i++) {
+    Serial.printf("%02X ", packet[i]);
+    SERIAL_PORT.write(packet[i]);
+  }
+  Serial.println();
 }
 
 uint8_t computeChecksum(uint8_t* data, size_t length) {
