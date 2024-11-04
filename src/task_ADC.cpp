@@ -19,7 +19,8 @@ const uint8_t FOOTER = 0xBB;  // Footer byte
 
 void taskADC(void *pvParameters)
 {
-  Serial.begin(115200);
+  // Serial.begin(115200);
+  Wire.begin(4,5);            //GPIO4 SDA, GPIO5 SCL
 
   // Start UART communication with the specified baud rate
   SERIAL_PORT.begin(115200, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
@@ -31,7 +32,7 @@ void taskADC(void *pvParameters)
 
   if (!ads.begin()) {
     // Serial.println("Failed to initialize ADS.");
-    while (1);
+    while(1);
   }
 
   while(true)
@@ -52,8 +53,8 @@ void taskADC(void *pvParameters)
         // Serial.println("Throttle Disconnected");
 
         // Send only raw data with comment via UART
-        // sendData(0);
-        SERIAL_PORT.print("Throttle Disconnected");
+        sendData(0);
+        // SERIAL_PORT.print("Throttle Disconnected");
       }
 
       vTaskDelay(task_ADC.getInterval()/portTICK_PERIOD_MS);
@@ -87,12 +88,12 @@ void sendData(float value) {
   uint8_t packet[5] = {HEADER, bytes[0], bytes[1], computeChecksum(packet + 1, 3), FOOTER };
 
   // Send the packet using a for loop
-  Serial.print("Sending packet: ");
+  // Serial.print("Sending packet: ");
   for (int i = 0; i < 5; i++) {
-    Serial.printf("%02X ", packet[i]);
+  //   Serial.printf("%02X ", packet[i]);
     SERIAL_PORT.write(packet[i]);
   }
-  Serial.println();
+  // Serial.println();
 }
 
 uint8_t computeChecksum(uint8_t* data, size_t length) {

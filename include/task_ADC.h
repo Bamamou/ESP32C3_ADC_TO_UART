@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include <Adafruit_ADS1X15.h>
+#include <Wire.h>
 #include "global_Constants.h"
 #include "global_Variables.h"
 
